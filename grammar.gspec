@@ -1,4 +1,16 @@
-expr    = mul ("+" mul | "-" mul)*
-mul     = unary ("*" unary | "/" unary)*
-unary   = ("+" | "-")? primary
-primary = num | "(" expr ")"
+Ascending order of priority:
+== !=
+< <= > >=
++ -
+* /
+unary+ unary-
+( )
+
+
+expr        = equality
+equality    = relational ("==" relational | "!=" relational)*
+relational  = add ("<" add | "<=" add | ">" add | ">=" add)*
+add         = mul ("+" mul | "-" mul)*
+mul         = unary ("*" unary | "/" unary)*
+unary       = ("+" | "-")? primary
+primary     = num | "(" expr ")"
