@@ -1,7 +1,12 @@
-CFLAGS=-std=c11 -g -static
+CC=g++
+CFLAGS=-std=c11 -g -fno-common
+SRCS=$(wildcard *.cpp)
+OBJS=$(SRCS:.cpp=.o)
 
-chibicc: main.o
-	$(CC) -o $@ $? $(LDFLAGS)
+syscc: $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(OBJS): syscc.hpp
 
 test: syscc
 	./test.sh
