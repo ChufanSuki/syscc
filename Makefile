@@ -1,12 +1,17 @@
-CC=g++
+CXX=g++
+CC=gcc
 CFLAGS=-std=c11 -g -fno-common
+# CXXFLAGS=-std=c++1y -g -Wextra -Werror -pedantic -fno-common
 SRCS=$(wildcard *.cpp)
 OBJS=$(SRCS:.cpp=.o)
 
 syscc: $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CXX) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 $(OBJS): syscc.hpp
+
+format:
+	@$(foreach var, $(SRCS), clang-format -i $(var);)
 
 test: syscc
 	./test.sh
