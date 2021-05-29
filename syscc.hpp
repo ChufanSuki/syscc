@@ -73,7 +73,7 @@ typedef enum {
   ND_ASSIGN,     // =
   ND_RETURN,     // "return"
   ND_IF,         // "if"
-  ND_FOR,        // "for"
+  ND_FOR,        // "for" or "while"
   ND_BLOCK,      // { ... }
   ND_EXPR_STMT,  // Expression statement
   ND_VAR,        // Variable
@@ -84,6 +84,7 @@ typedef enum {
 struct Node {
   NodeKind kind;  // Node kind
   Node *next;     // Next node
+  Token *tok;     // Representative token
 
   Node *lhs;  // left-hand side
   Node *rhs;  // right-hand side
