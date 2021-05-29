@@ -3,6 +3,14 @@
 // Input string
 static char *current_input;
 
+void print_token(Token *token) {
+  if (token->kind == TK_NUM) {
+    printf("token: %d\n", token->val);
+  } else if (token->kind == TK_PUNCT) {
+    printf("token: %.*s\n", token->len, token->loc);
+  }
+}
+
 // Reports an error and exit.
 void error(char *fmt, ...) {
   va_list ap;
@@ -16,7 +24,7 @@ void error(char *fmt, ...) {
 static void verror_at(char *loc, char *fmt, va_list ap) {
   int pos = loc - current_input;
   fprintf(stderr, "%s\n", current_input);
-  fprintf(stderr, "%*s", pos, ""); // print pos spaces.
+  fprintf(stderr, "%*s", pos, "");  // print pos spaces.
   fprintf(stderr, "^ ");
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
@@ -36,35 +44,28 @@ void error_tok(Token *tok, char *fmt, ...) {
 }
 
 // Consumes the current token if it matches `op`.
-bool equal(Token *tok, char *op) {
-  return memcmp(tok->loc, op, tok->len) == 0 && op[tok->len] == '\0';
-}
+bool equal(Token *tok, char *op) { return memcmp(tok->loc, op, tok->len) == 0 && op[tok->len] == '\0'; }
 
 // Ensure that the current token is `op`.
 Token *skip(Token *tok, char *op) {
-  if (!equal(tok, op))
-    error_tok(tok, "expected '%s'", op);
+  if (!equal(tok, op)) error_tok(tok, "expected '%s'", op);
   return tok->next;
 }
 
 // Create a new token.
 static Token *new_token(TokenKind kind, char *start, char *end) {
-  Token *tok = (Token*) calloc(1, sizeof(Token));
+  Token *tok = (Token *)calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->loc = start;
   tok->len = end - start;
   return tok;
 }
 
-static bool startswith(char *p, char *q) {
-  return strncmp(p, q, strlen(q)) == 0;
-}
+static bool startswith(char *p, char *q) { return strncmp(p, q, strlen(q)) == 0; }
 
 // Read a punctuator token from p and returns its length.
 static int read_punct(char *p) {
-  if (startswith(p, "==") || startswith(p, "!=") ||
-      startswith(p, "<=") || startswith(p, ">="))
-    return 2;
+  if (startswith(p, "==") || startswith(p, "!=") || startswith(p, "<=") || startswith(p, ">=")) return 2;
 
   return ispunct(*p) ? 1 : 0;
 }
@@ -88,6 +89,13 @@ Token *tokenize(char *p) {
       char *q = p;
       cur->val = strtoul(p, &p, 10);
       cur->len = p - q;
+      continue;
+    }
+
+    // Identifier
+    if ('a' <= *p && *p <= 'z') {
+      cur = cur->next = new_token(TK_IDENT, p, p + 1);
+      p++;
       continue;
     }
 
