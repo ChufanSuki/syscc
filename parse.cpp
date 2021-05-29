@@ -1,6 +1,7 @@
 #include "syscc.hpp"
 
 static Node *expr(Token **rest, Token *tok);
+static Node *expr_stmt(Token **rest, Token *tok);
 static Node *equality(Token **rest, Token *tok);
 static Node *relational(Token **rest, Token *tok);
 static Node *add(Token **rest, Token *tok);
@@ -9,29 +10,38 @@ static Node *unary(Token **rest, Token *tok);
 static Node *primary(Token **rest, Token *tok);
 
 static Node *new_node(NodeKind kind) {
-	Node *node = (Node*) calloc(1, sizeof(Node));
-	node->kind = kind;
-	return node;
+  Node *node = (Node *)calloc(1, sizeof(Node));
+  node->kind = kind;
+  return node;
 }
 
-static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs)  {
-	Node *node = new_node(kind);
-	node->lhs = lhs;
-	node->rhs = rhs;
+static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
+  Node *node = new_node(kind);
+  node->lhs = lhs;
+  node->rhs = rhs;
   switch (kind) {
-    case ND_ADD: node->name = "ND_ADD"; break;
-    case ND_SUB: node->name = "ND_SUB"; break;
-    case ND_DIV: node->name = "ND_DIV"; break;
-    case ND_MUL: node->name = "ND_MUL"; break;
-    default: node->name = "Unknown";
+    case ND_ADD:
+      node->name = "ND_ADD";
+      break;
+    case ND_SUB:
+      node->name = "ND_SUB";
+      break;
+    case ND_DIV:
+      node->name = "ND_DIV";
+      break;
+    case ND_MUL:
+      node->name = "ND_MUL";
+      break;
+    default:
+      node->name = "Unknown";
   }
-	return node;
+  return node;
 }
 
 static Node *new_unary(NodeKind kind, Node *expr) {
-    Node *node = new_node(kind);
-    node->lhs = expr;
-    return node;
+  Node *node = new_node(kind);
+  node->lhs = expr;
+  return node;
 }
 
 Node *new_num(int val) {
@@ -41,15 +51,24 @@ Node *new_num(int val) {
   return node;
 }
 
-// expr = equality
-static Node *expr(Token **rest, Token *tok) {
-  return equality(rest, tok);
+// stmt = expr-stmt
+static Node *stmt(Token **rest, Token *tok) {
+  return expr_stmt(rest, tok);
 }
+
+// expr-stmt = expr ";"
+static Node *expr_stmt(Token **rest, Token *tok) {
+  Node *node = new_unary(ND_EXPR_STMT, expr(&tok, tok));
+  *rest = skip(tok, ";");
+  return node;
+}
+
+// expr = equality
+static Node *expr(Token **rest, Token *tok) { return equality(rest, tok); }
 
 // equality = relational ("==" relational | "!=" relational)*
 static Node *equality(Token **rest, Token *tok) {
   Node *node = relational(&tok, tok);
-
   for (;;) {
     if (equal(tok, "==")) {
       node = new_binary(ND_EQ, node, relational(&tok, tok->next));
@@ -99,7 +118,6 @@ static Node *relational(Token **rest, Token *tok) {
 // add = mul ("+" mul | "-" mul)*
 static Node *add(Token **rest, Token *tok) {
   Node *node = mul(&tok, tok);
-
   for (;;) {
     if (equal(tok, "+")) {
       node = new_binary(ND_ADD, node, mul(&tok, tok->next));
@@ -139,11 +157,9 @@ static Node *mul(Token **rest, Token *tok) {
 // unary = ("+" | "-") unary
 //       | primary
 static Node *unary(Token **rest, Token *tok) {
-  if (equal(tok, "+"))
-    return unary(rest, tok->next);
+  if (equal(tok, "+")) return unary(rest, tok->next);
 
-  if (equal(tok, "-"))
-    return new_unary(ND_NEG, unary(rest, tok->next));
+  if (equal(tok, "-")) return new_unary(ND_NEG, unary(rest, tok->next));
 
   return primary(rest, tok);
 }
@@ -165,9 +181,11 @@ static Node *primary(Token **rest, Token *tok) {
   error_tok(tok, "expected an expression");
 }
 
+// program = stmt*
 Node *parse(Token *tok) {
-  Node *node = expr(&tok, tok);
-  if (tok->kind != TK_EOF)
-    error_tok(tok, "extra token");
-  return node;
+    Node head = {};
+    Node *cur = &head;
+    while (tok->kind != TK_EOF) 
+        cur = cur->next = stmt(&tok, tok);
+    return head.next;
 }

@@ -11,21 +11,22 @@
 //
 
 typedef enum {
-  TK_PUNCT, // Keywords or punctuators
-  TK_NUM,   // Numeric literals
-  TK_EOF,   // End-of-file markers
+  TK_PUNCT,  // Keywords or punctuators
+  TK_NUM,    // Numeric literals
+  TK_EOF,    // End-of-file markers
 } TokenKind;
 
 // Token type
 typedef struct Token Token;
 struct Token {
-  TokenKind kind; // Token kind
-  Token *next;    // Next token
-  int val;        // If kind is TK_NUM, its value
-  char *loc;      // Token location
-  int len;        // Token length
+  TokenKind kind;  // Token kind
+  Token *next;     // Next token
+  int val;         // If kind is TK_NUM, its value
+  char *loc;       // Token location
+  int len;         // Token length
 };
 
+void print_token(Token *tok);
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
 void error_tok(Token *tok, char *fmt, ...);
@@ -38,28 +39,30 @@ Token *tokenize(char *input);
 //
 
 typedef enum {
-  ND_ADD, // +
-  ND_SUB, // -
-  ND_MUL, // *
-  ND_DIV, // /
-  ND_NEG, // unary -
-  ND_EQ,  // ==
-  ND_NE,  // !=
-  ND_LT,  // <
-  ND_LE,  // <=
-  ND_NUM, // Integer
+  ND_ADD,        // +
+  ND_SUB,        // -
+  ND_MUL,        // *
+  ND_DIV,        // /
+  ND_NEG,        // unary -
+  ND_EQ,         // ==
+  ND_NE,         // !=
+  ND_LT,         // <
+  ND_LE,         // <=
+  ND_EXPR_STMT,  // Expression statement
+  ND_NUM,        // Integer
 } NodeKind;
 
 // AST node type
 typedef struct Node Node;
 struct Node {
-	NodeKind kind; // Node kind
-	Node *lhs;
-	Node *rhs;
-	int  val;
-    char* name;
-    int _num; // Used for visualize tree
-    int num_num;
+  NodeKind kind;  // Node kind
+  Node *next;     // Next node
+  Node *lhs;      // left-hand side
+  Node *rhs;      // right-hand side
+  int val;        // Used if kind == ND_NUM
+  char *name;
+  int _num;  // Used for visualize tree
+  int num_num;
 };
 
 Node *parse(Token *tok);
