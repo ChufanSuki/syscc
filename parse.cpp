@@ -71,8 +71,7 @@ static Node *stmt(Token **rest, Token *tok) {
     return node;
   }
 
-  if (equal(tok, "{"))
-    return compound_stmt(rest, tok->next);
+  if (equal(tok, "{")) return compound_stmt(rest, tok->next);
 
   return expr_stmt(rest, tok);
 }
@@ -81,8 +80,7 @@ static Node *stmt(Token **rest, Token *tok) {
 static Node *compound_stmt(Token **rest, Token *tok) {
   Node head = {};
   Node *cur = &head;
-  while (!equal(tok, "}"))
-    cur = cur->next = stmt(&tok, tok);
+  while (!equal(tok, "}")) cur = cur->next = stmt(&tok, tok);
 
   Node *node = new_node(ND_BLOCK);
   node->body = head.next;
@@ -92,6 +90,10 @@ static Node *compound_stmt(Token **rest, Token *tok) {
 
 // expr-stmt = expr ";"
 static Node *expr_stmt(Token **rest, Token *tok) {
+  if (equal(tok, ";")) {
+    *rest = tok->next;
+    return new_node(ND_BLOCK);
+  }
   Node *node = new_unary(ND_EXPR_STMT, expr(&tok, tok));
   *rest = skip(tok, ";");
   return node;
@@ -230,7 +232,7 @@ static Node *primary(Token **rest, Token *tok) {
   error_tok(tok, "expected an expression");
 }
 
-// program = stmt*
+// program = "{" compound_stmt
 Function *parse(Token *tok) {
   tok = skip(tok, "{");
   Function *prog = (Function *)calloc(1, sizeof(Function));
