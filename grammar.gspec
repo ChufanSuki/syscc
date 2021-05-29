@@ -7,8 +7,8 @@ unary+ unary-
 ( )
 
 program     = stmt*
-stmt        = "return" expr ";" | expr-stmt | "{" compound-stmt
-expr-stmt   = expr ";"
+stmt        = "return" expr ";" | expr-stmt | "{" compound-stmt | "if" "(" expr ")" stmt ("else" stmt)?
+expr-stmt   = expr? ";"
 compound-stmt = stmt* "}"
 expr        = assign
 assign      = equality ("=" assign)?
