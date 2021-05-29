@@ -7,12 +7,14 @@ unary+ unary-
 ( )
 
 program     = stmt*
-stmt        = expr-stmt
+stmt        = "return" expr ";" | expr-stmt | "{" compound-stmt
 expr-stmt   = expr ";"
-expr        = equality
+compound-stmt = stmt* "}"
+expr        = assign
+assign      = equality ("=" assign)?
 equality    = relational ("==" relational | "!=" relational)*
 relational  = add ("<" add | "<=" add | ">" add | ">=" add)*
 add         = mul ("+" mul | "-" mul)*
 mul         = unary ("*" unary | "/" unary)*
 unary       = ("+" | "-")? primary
-primary     = num | "(" expr ")"
+primary     = num | "(" expr ")" | ident
