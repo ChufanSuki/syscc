@@ -14,7 +14,7 @@ assert() {
   expected="$1"
   input="$2"
 
-  echo "$input" | ./chibicc - > tmp.s || exit
+  echo "$input" | ./syscc - > tmp.s || exit
   gcc -static -o tmp tmp.s tmp2.o
   ./tmp
   actual="$?"
