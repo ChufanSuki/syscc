@@ -548,43 +548,43 @@ static void gen_expr(Node *node, int father) {
       return;
   }
 
-  gen_expr(node->rhs, father);
-  gen_expr(node->lhs, father);
-
   switch (node->kind) {
     case ND_ADD:
       printf("  node%d [label=\"%s\"]\n", ncount++, "ADD");
       printf("  node%d -> node%d\n", father, ncount - 1);
-      return;
+      break;
     case ND_SUB:
       printf("  node%d [label=\"%s\"]\n", ncount++, "SUB");
       printf("  node%d -> node%d\n", father, ncount - 1);
-      return;
+      break;
     case ND_MUL:
       printf("  node%d [label=\"%s\"]\n", ncount++, "MUL");
       printf("  node%d -> node%d\n", father, ncount - 1);
-      return;
+      break;
     case ND_DIV:
       printf("  node%d [label=\"%s\"]\n", ncount++, "DIV");
       printf("  node%d -> node%d\n", father, ncount - 1);
-      return;
+      break;
     case ND_EQ:
       printf("  node%d [label=\"%s\"]\n", ncount++, "EQ");
       printf("  node%d -> node%d\n", father, ncount - 1);
-      return;
+      break;
     case ND_NE:
       printf("  node%d [label=\"%s\"]\n", ncount++, "NE");
       printf("  node%d -> node%d\n", father, ncount - 1);
-      return;
+      break;
     case ND_LT:
       printf("  node%d [label=\"%s\"]\n", ncount++, "LT");
       printf("  node%d -> node%d\n", father, ncount - 1);
-      return;
+      break;
     case ND_LE:
       printf("  node%d [label=\"%s\"]\n", ncount++, "LE");
       printf("  node%d -> node%d\n", father, ncount - 1);
-      return;
+      break;
   }
+  int tmp = ncount;
+  gen_expr(node->rhs, ncount - 1);
+  gen_expr(node->lhs, tmp - 1);
 }
 
 static void gen_stmt(Node *node, int father) {
@@ -616,7 +616,7 @@ static void gen_stmt(Node *node, int father) {
       printf("  node%d [label=\"%s\"];\n", ncount++, "BLOCK");
       printf("  node%d -> node%d;\n", father, ncount - 1);
       int tmp = ncount;
-      for (Node *n = node->body; n; n = n->next) gen_stmt(n, tmp-1);
+      for (Node *n = node->body; n; n = n->next) gen_stmt(n, tmp - 1);
       return;
     }
     case ND_RETURN:
