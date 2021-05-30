@@ -1,10 +1,14 @@
 #include <memory>
 #include "syscc.hpp"
 
-// In C, (struct context){ 0 } is compound literal syntax that creates an instance of context with a duration of the enclosing scope (e.g. it exists for the duration of the function call or block in which it is created).
-// In C++ on the other hand, (struct context){ 0 } creates a temporary, it exists for the duration of the full-expression, usually until the first ;. Note that (struct context){ 0 } is not technically C++ (GCC understands it as a compiler extension), context{} would be a C++ alternative, though the semantics are the same.
-// So in C++ mode, struct context* ctx = &(struct context){ 0 }; would initialize ctx to point to a non-existent object (a dangling pointer). That's what the compiler is complaining about.
-// The solution could be to give this initial context a name at global or function scope
+// In C, (struct context){ 0 } is compound literal syntax that creates an instance of context with a duration of the
+// enclosing scope (e.g. it exists for the duration of the function call or block in which it is created). In C++ on the
+// other hand, (struct context){ 0 } creates a temporary, it exists for the duration of the full-expression, usually
+// until the first ;. Note that (struct context){ 0 } is not technically C++ (GCC understands it as a compiler
+// extension), context{} would be a C++ alternative, though the semantics are the same. So in C++ mode, struct context*
+// ctx = &(struct context){ 0 }; would initialize ctx to point to a non-existent object (a dangling pointer). That's
+// what the compiler is complaining about. The solution could be to give this initial context a name at global or
+// function scope
 Type init_ty = (Type){TY_INT};
 Type *ty_int = &init_ty;
 
@@ -44,6 +48,7 @@ void add_type(Node *node) {
     case ND_LT:
     case ND_LE:
     case ND_NUM:
+    case ND_FUNCALL:
       node->ty = ty_int;
       return;
     case ND_VAR:
@@ -53,9 +58,8 @@ void add_type(Node *node) {
       node->ty = pointer_to(node->lhs->ty);
       return;
     case ND_DEREF:
-      if (node->lhs->ty->kind != TY_PTR)
-      error_tok(node->tok, "invalid pointer dereference");
-    node->ty = node->lhs->ty->base;
+      if (node->lhs->ty->kind != TY_PTR) error_tok(node->tok, "invalid pointer dereference");
+      node->ty = node->lhs->ty->base;
       return;
   }
 }
