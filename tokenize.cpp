@@ -9,7 +9,9 @@ static char *current_input;
 void print_token(Token *token) {
   if (token->kind == TK_NUM) {
     printf("token: %d\n", token->val);
-  } else if (token->kind == TK_PUNCT) {
+  } else if (token->kind == TK_EOF) {
+    printf("token: EOF\n");
+  } else {
     printf("token: %.*s\n", token->len, token->loc);
   }
 }

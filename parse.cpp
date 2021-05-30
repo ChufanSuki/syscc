@@ -22,6 +22,8 @@
 // accumulated to this list.
 Obj *locals;
 
+static Function head = {};
+
 static Type *declspec(Token **rest, Token *tok);
 static Type *declarator(Token **rest, Token *tok, Type *ty);
 static Node *declaration(Token **rest, Token *tok);
@@ -41,6 +43,12 @@ static Node *primary(Token **rest, Token *tok);
 static Obj *find_var(Token *tok) {
   for (Obj *var = locals; var; var = var->next)
     if (strlen(var->name) == tok->len && !strncmp(tok->loc, var->name, tok->len)) return var;
+  return NULL;
+}
+
+static Function *find_func(Token *tok) {
+  for (Function *func = head.next; func; func = func->next)
+    if (strlen(func->name) == tok->len && !strncmp(tok->loc, func->name, tok->len)) return func;
   return NULL;
 }
 
@@ -147,6 +155,7 @@ static Type *declarator(Token **rest, Token *tok, Type *ty) {
   return ty;
 }
 
+// FIXME: "int;" passed parsing
 // declaration = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
 static Node *declaration(Token **rest, Token *tok) {
   Type *basety = declspec(&tok, tok);
@@ -159,6 +168,11 @@ static Node *declaration(Token **rest, Token *tok) {
     if (i++ > 0) tok = skip(tok, ",");
 
     Type *ty = declarator(&tok, tok, basety);
+    if (find_var(ty->name)) {
+      char message[50];
+      sprintf(message, "redefinition of '%s'", get_ident(ty->name));
+      error_tok(tok, message);
+    }
     Obj *var = new_lvar(get_ident(ty->name), ty);
 
     if (!equal(tok, "=")) continue;
@@ -496,6 +510,11 @@ static Function *function(Token **rest, Token *tok) {
 
   locals = NULL;
 
+  if (find_func(ty->name)) {
+    char message[50];
+    sprintf(message, "redefinition of '%s'", get_ident(ty->name));
+    error_tok(ty->name, message);
+  }
   Function *fn = (Function *)calloc(1, sizeof(Function));
   fn->name = get_ident(ty->name);
   create_param_lvars(ty->params);
@@ -509,12 +528,13 @@ static Function *function(Token **rest, Token *tok) {
 
 // program = function-definition*
 Function *parse(Token *tok) {
-  Function head = {};
   Function *cur = &head;
 
   while (tok->kind != TK_EOF) cur = cur->next = function(&tok, tok);
   return head.next;
 }
+
+// print ast
 
 static int ncount = 1;
 
