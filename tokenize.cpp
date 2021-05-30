@@ -27,7 +27,7 @@ void error(char *fmt, ...) {
 
 // Reports an error message in the following format and exit.
 //
-// foo.c:10: x = y + 1;
+// foo.c:10: error: x = y + 1;
 //               ^ <error message here>
 static void verror_at(char *loc, char *fmt, va_list ap) {
   // Find a line containing `loc`.
@@ -42,13 +42,19 @@ static void verror_at(char *loc, char *fmt, va_list ap) {
   for (char *p = current_input; p < line; p++)
     if (*p == '\n') line_no++;
 
+  // Get a coloumn number.
+  int coloumn_no = 1;
+  for (char *p = line; p < loc; p++) 
+    coloumn_no++;
+
   // Print out the line.
-  int indent = fprintf(stderr, "%s:%d: ", current_filename, line_no);
+  int indent = fprintf(stderr, "%s:%d.%d: ", current_filename, line_no, coloumn_no);
+  fprintf(stderr, "\033[0;31merror: \033[0m");
   fprintf(stderr, "%.*s\n", (int)(end - line), line);
 
   // Show the error message.
   int pos = loc - line + indent;
-  fprintf(stderr, "%*s", pos, "");  // print pos spaces.
+  fprintf(stderr, "%*s", pos+7, "");  // print pos spaces.
   fprintf(stderr, "^ ");
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
