@@ -632,16 +632,19 @@ static void gen_stmt(Node *node, int father) {
   }
 }
 static Function *current_fn;
-
+static int current_fn_num;
 void dotgen(Function *prog) {
   Function *cur = prog;
   printf(
       "digraph astgraph {\n  node [shape=none, fontsize=12, fontname=\"Courier\", height=.1];\n  ranksep=.3;\n  edge "
       "[arrowsize=.5];\n");
+  printf("  node%d [label=\"%s\"];\n", ncount++, "prog");
   for (Function *fn = prog; fn; fn = fn->next) {
     printf("  node%d [label=\"%s\"];\n", ncount++, fn->name);
+    printf("  node%d -> node%d;\n", 1, ncount - 1);
     current_fn = fn;
-    gen_stmt(fn->body, 1);
+    current_fn_num = ncount - 1;
+    gen_stmt(fn->body, current_fn_num);
   }
   printf("}\n");
 }
