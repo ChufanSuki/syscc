@@ -9,7 +9,7 @@
 // ctx = &(struct context){ 0 }; would initialize ctx to point to a non-existent object (a dangling pointer). That's
 // what the compiler is complaining about. The solution could be to give this initial context a name at global or
 // function scope
-Type init_ty = (Type){TY_INT};
+Type init_ty = (Type){TY_INT, 8};
 Type *ty_int = &init_ty;
 
 bool is_integer(Type *ty) { return ty->kind == TY_INT; }
@@ -24,6 +24,7 @@ Type *pointer_to(Type *base) {
   Type *ty = (Type *)calloc(1, sizeof(Type));
   ty->kind = TY_PTR;
   ty->base = base;
+  ty->size = 8;
   return ty;
 }
 
@@ -31,6 +32,15 @@ Type *func_type(Type *return_ty) {
   Type *ty = (Type *)calloc(1, sizeof(Type));
   ty->kind = TY_FUNC;
   ty->return_ty = return_ty;
+  return ty;
+}
+
+Type *array_of(Type *base, int len) {
+  Type *ty = (Type *)calloc(1, sizeof(Type));
+  ty->kind = TY_ARRAY;
+  ty->size = base->size * len;
+  ty->base = base;
+  ty->array_len = len;
   return ty;
 }
 
@@ -54,7 +64,10 @@ void add_type(Node *node) {
     case ND_MUL:
     case ND_DIV:
     case ND_NEG:
+      node->ty = node->lhs->ty;
+      return;
     case ND_ASSIGN:
+      if (node->lhs->ty->kind == TY_ARRAY) error_tok(node->lhs->tok, "not an lvalue");
       node->ty = node->lhs->ty;
       return;
     case ND_EQ:
@@ -69,10 +82,13 @@ void add_type(Node *node) {
       node->ty = node->var->ty;
       return;
     case ND_ADDR:
-      node->ty = pointer_to(node->lhs->ty);
+      if (node->lhs->ty->kind == TY_ARRAY)
+        node->ty = pointer_to(node->lhs->ty->base);
+      else
+        node->ty = pointer_to(node->lhs->ty);
       return;
     case ND_DEREF:
-      if (node->lhs->ty->kind != TY_PTR) error_tok(node->tok, "invalid pointer dereference");
+      if (!node->lhs->ty->base) error_tok(node->tok, "invalid pointer dereference");
       node->ty = node->lhs->ty->base;
       return;
   }
