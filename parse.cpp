@@ -16,8 +16,8 @@
 // So it is very easy to lookahead arbitrary number of tokens in this
 // parser.
 
+#include <list>
 #include "syscc.hpp"
-
 // All local variable instances created during parsing are
 // accumulated to this list.
 Obj *locals;
@@ -501,4 +501,147 @@ Function *parse(Token *tok) {
 
   while (tok->kind != TK_EOF) cur = cur->next = function(&tok, tok);
   return head.next;
+}
+
+static int ncount = 1;
+
+static void gen_expr(Node *node, int father) {
+  switch (node->kind) {
+    case ND_NUM:
+      printf("  node%d [label=\"%d\"];\n", ncount++, node->val);
+      printf("  node%d -> node%d;\n", father, ncount - 1);
+      return;
+    case ND_NEG:
+      printf("  node%d [label=\"%s\"];\n", ncount++, "NEG");
+      printf("  node%d -> node%d;\n", father, ncount - 1);
+      gen_expr(node->lhs, ncount - 1);
+      return;
+    case ND_VAR:
+      printf("  node%d [label=\"%s\"];\n", ncount++, "VAR");
+      printf("  node%d -> node%d;\n", father, ncount - 1);
+      // gen_addr(node);
+      return;
+    case ND_DEREF:
+      printf("  node%d [label=\"%s\"];\n", ncount++, "DEREF");
+      printf("  node%d -> node%d;\n", father, ncount - 1);
+      gen_expr(node->lhs, ncount - 1);
+      return;
+    case ND_ADDR:
+      printf("  node%d [label=\"%s\"];\n", ncount++, "ADDR");
+      printf("  node%d -> node%d;\n", father, ncount - 1);
+      // gen_addr(node->lhs);
+      return;
+    case ND_ASSIGN:
+      printf("  node%d [label=\"%s\"];\n", ncount++, "ASSIGN");
+      printf("  node%d -> node%d;\n", father, ncount - 1);
+      // gen_addr(node->lhs, ncount);
+      gen_expr(node->rhs, ncount - 1);
+      return;
+    case ND_FUNCALL:
+      printf("  node%d [label=\"%s\"];\n", ncount++, "FUNCALL");
+      printf("  node%d -> node%d;\n", father, ncount - 1);
+      int nargs = 0;
+      for (Node *arg = node->args; arg; arg = arg->next) {
+        gen_expr(arg, ncount - 1);
+        nargs++;
+      }
+      return;
+  }
+
+  gen_expr(node->rhs, father);
+  gen_expr(node->lhs, father);
+
+  switch (node->kind) {
+    case ND_ADD:
+      printf("  node%d [label=\"%s\"]\n", ncount++, "ADD");
+      printf("  node%d -> node%d\n", father, ncount - 1);
+      return;
+    case ND_SUB:
+      printf("  node%d [label=\"%s\"]\n", ncount++, "SUB");
+      printf("  node%d -> node%d\n", father, ncount - 1);
+      return;
+    case ND_MUL:
+      printf("  node%d [label=\"%s\"]\n", ncount++, "MUL");
+      printf("  node%d -> node%d\n", father, ncount - 1);
+      return;
+    case ND_DIV:
+      printf("  node%d [label=\"%s\"]\n", ncount++, "DIV");
+      printf("  node%d -> node%d\n", father, ncount - 1);
+      return;
+    case ND_EQ:
+      printf("  node%d [label=\"%s\"]\n", ncount++, "EQ");
+      printf("  node%d -> node%d\n", father, ncount - 1);
+      return;
+    case ND_NE:
+      printf("  node%d [label=\"%s\"]\n", ncount++, "NE");
+      printf("  node%d -> node%d\n", father, ncount - 1);
+      return;
+    case ND_LT:
+      printf("  node%d [label=\"%s\"]\n", ncount++, "LT");
+      printf("  node%d -> node%d\n", father, ncount - 1);
+      return;
+    case ND_LE:
+      printf("  node%d [label=\"%s\"]\n", ncount++, "LE");
+      printf("  node%d -> node%d\n", father, ncount - 1);
+      return;
+  }
+}
+
+static void gen_stmt(Node *node, int father) {
+  switch (node->kind) {
+    case ND_IF: {
+      printf("  node%d [label=\"%s\"]\n", ncount++, "IF");
+      printf("  node%d -> node%d\n", father, ncount - 1);
+      gen_stmt(node->then, ncount);
+      if (node->els) gen_stmt(node->els, ncount);
+      return;
+    }
+    case ND_FOR: {
+      if (node->init) {
+        printf("  node%d [label=\"%s\"]\n", ncount++, "FOR");
+        printf("  node%d -> node%d\n", father, ncount - 1);
+      } else {
+        printf("  node%d [label=\"%s\"]\n", ncount++, "WHILE");
+        printf("  node%d -> node%d\n", father, ncount - 1);
+      }
+      if (node->init) gen_stmt(node->init, ncount);
+      if (node->cond) {
+        gen_expr(node->cond, ncount);
+      }
+      gen_stmt(node->then, ncount);
+      if (node->inc) gen_expr(node->inc, ncount);
+      return;
+    }
+    case ND_BLOCK: {
+      printf("  node%d [label=\"%s\"];\n", ncount++, "BLOCK");
+      printf("  node%d -> node%d;\n", father, ncount - 1);
+      int tmp = ncount;
+      for (Node *n = node->body; n; n = n->next) gen_stmt(n, tmp-1);
+      return;
+    }
+    case ND_RETURN:
+      printf("  node%d [label=\"%s\"];\n", ncount++, "RETURN");
+      printf("  node%d -> node%d;\n", father, ncount - 1);
+      gen_expr(node->lhs, ncount - 1);
+      return;
+    case ND_EXPR_STMT:
+      printf("  node%d [label=\"%s\"];\n", ncount++, "EXPR STMT");
+      printf("  node%d -> node%d;\n", father, ncount - 1);
+      gen_expr(node->lhs, ncount - 1);
+      return;
+  }
+}
+static Function *current_fn;
+
+void dotgen(Function *prog) {
+  Function *cur = prog;
+  printf(
+      "digraph astgraph {\n  node [shape=none, fontsize=12, fontname=\"Courier\", height=.1];\n  ranksep=.3;\n  edge "
+      "[arrowsize=.5];\n");
+  for (Function *fn = prog; fn; fn = fn->next) {
+    printf("  node%d [label=\"%s\"];\n", ncount++, fn->name);
+    current_fn = fn;
+    gen_stmt(fn->body, 1);
+  }
+  printf("}\n");
 }

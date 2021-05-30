@@ -116,10 +116,14 @@ struct Node {
 
   int val;   // Used if kind == ND_NUM
   Obj *var;  // Used if kind == ND_VAR
+
+  // Print AST
+  int _num;
+  int _num_val;  // Used if kind == ND_NUM
 };
 
 Function *parse(Token *tok);
-
+void dotgen(Function *prog);
 //
 // type.c
 //
