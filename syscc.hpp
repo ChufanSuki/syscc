@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -39,7 +40,7 @@ void error_tok(Token *tok, char *fmt, ...);
 bool equal(Token *tok, char *op);
 Token *skip(Token *tok, char *op);
 bool consume(Token **rest, Token *tok, char *str);
-Token *tokenize(char *input);
+Token *tokenize_file(char *filename);
 
 //
 // parse.c
@@ -129,6 +130,7 @@ void dotgen(Function *prog);
 //
 
 typedef enum {
+  TY_BOOL,
   TY_INT,
   TY_PTR,
   TY_FUNC,
@@ -138,7 +140,8 @@ typedef enum {
 struct Type {
   TypeKind kind;
 
-  int size;  // sizeof() value
+  int size;   // sizeof() value
+  int align;  // alignment
 
   // Pointer-to or array-of type. We intentionally use the same member
   // to represent pointer/array duality in C.
@@ -163,6 +166,7 @@ struct Type {
 };
 
 extern Type *ty_int;
+extern Type *ty_bool;
 
 bool is_integer(Type *ty);
 Type *copy_type(Type *ty);
