@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: install
-      run: sudo apt install -y binutils 
+      run: sudo apt install -y binutils libc6-dev1
     - name: make
       run: make
     - name: make test
