@@ -457,7 +457,6 @@ static Node *postfix(Token **rest, Token *tok) {
   while (equal(tok, "[")) {
     // x[y] is short for *(x+y)
     Token *start = tok;
-    print_token(start);
     Node *idx = expr(&tok, tok->next);
     tok = skip(tok, "]");
     node = new_unary(ND_DEREF, new_add(node, idx, start), start);
