@@ -20,9 +20,8 @@
 #include "syscc.hpp"
 // All local variable instances created during parsing are
 // accumulated to this list.
-Obj *locals;
-
-static Function head = {};
+static Obj *locals;
+static Obj *globals;
 
 static Type *declspec(Token **rest, Token *tok);
 static Type *declarator(Token **rest, Token *tok, Type *ty);
@@ -44,12 +43,6 @@ static Node *primary(Token **rest, Token *tok);
 static Obj *find_var(Token *tok) {
   for (Obj *var = locals; var; var = var->next)
     if (strlen(var->name) == tok->len && !strncmp(tok->loc, var->name, tok->len)) return var;
-  return NULL;
-}
-
-static Function *find_func(Token *tok) {
-  for (Function *func = head.next; func; func = func->next)
-    if (strlen(func->name) == tok->len && !strncmp(tok->loc, func->name, tok->len)) return func;
   return NULL;
 }
 
@@ -85,12 +78,25 @@ static Node *new_var_node(Obj *var, Token *tok) {
   return node;
 }
 
-static Obj *new_lvar(char *name, Type *ty) {
-  Obj *var = (Obj *)calloc(1, sizeof(Obj));
+static Obj *new_var(char *name, Type *ty) {
+  Obj *var = (Obj*)calloc(1, sizeof(Obj));
   var->name = name;
   var->ty = ty;
+  return var;
+}
+
+static Obj *new_lvar(char *name, Type *ty) {
+  Obj *var = new_var(name, ty);
+  var->is_local = true;
   var->next = locals;
   locals = var;
+  return var;
+}
+
+static Obj *new_gvar(char *name, Type *ty) {
+  Obj *var = new_var(name, ty);
+  var->next = globals;
+  globals = var;
   return var;
 }
 
@@ -528,34 +534,32 @@ static void create_param_lvars(Type *param) {
 }
 
 // function-definition = declspec declarator "{" compound-stmt
-static Function *function(Token **rest, Token *tok) {
-  Type *ty = declspec(&tok, tok);
-  ty = declarator(&tok, tok, ty);
+static Token *function(Token *tok, Type *basety) {
+  Type *ty = declarator(&tok, tok, basety);
+
+  Obj *fn = new_gvar(get_ident(ty->name), ty);
+  fn->is_function = true;
 
   locals = NULL;
-
-  if (find_func(ty->name)) {
-    char message[50];
-    sprintf(message, "redefinition of '%s'", get_ident(ty->name));
-    error_tok(ty->name, message);
-  }
-  Function *fn = (Function *)calloc(1, sizeof(Function));
-  fn->name = get_ident(ty->name);
   create_param_lvars(ty->params);
   fn->params = locals;
 
   tok = skip(tok, "{");
-  fn->body = compound_stmt(rest, tok);
+  fn->body = compound_stmt(&tok, tok);
   fn->locals = locals;
-  return fn;
+  fn->is_function = true;
+  return tok;
 }
 
-// program = function-definition*
-Function *parse(Token *tok) {
-  Function *cur = &head;
-
-  while (tok->kind != TK_EOF) cur = cur->next = function(&tok, tok);
-  return head.next;
+// program = (function-definition | global-variable)*
+Obj *parse(Token *tok) {
+  globals = NULL;
+  
+  while (tok->kind != TK_EOF) {
+    Type *basety = declspec(&tok, tok);
+    tok = function(tok, basety);
+  }
+  return globals;
 }
 
 // print ast
@@ -688,17 +692,20 @@ static void gen_stmt(Node *node, int father) {
       return;
   }
 }
-static Function *current_fn;
+static Obj *current_fn;
 static int current_fn_num;
-void dotgen(Function *prog) {
-  Function *cur = prog;
+void dotgen(Obj *prog) {
+  Obj *cur = prog;
   printf(
       "digraph astgraph {\n  node [shape=none, fontsize=12, fontname=\"Courier\", height=.1];\n  ranksep=.3;\n  edge "
       "[arrowsize=.5];\n");
   printf("  node%d [label=\"%s\"];\n", ncount++, "prog");
-  for (Function *fn = prog; fn; fn = fn->next) {
+  for (Obj *fn = prog; fn; fn = fn->next) {
     printf("  node%d [label=\"%s\"];\n", ncount++, fn->name);
     printf("  node%d -> node%d;\n", 1, ncount - 1);
+        if (!fn->is_function) {
+      continue;
+    }
     current_fn = fn;
     current_fn_num = ncount - 1;
     gen_stmt(fn->body, current_fn_num);

@@ -2,7 +2,7 @@
 
 static int depth;
 static char *argreg[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
-static Function *current_fn;
+static Obj *current_fn;
 
 static void gen_expr(Node *node);
 
@@ -189,9 +189,11 @@ static void gen_stmt(Node *node) {
 }
 
 // Assign offsets to local variables.
-static void assign_lvar_offsets(Function *prog) {
+static void assign_lvar_offsets(Obj *prog) {
   int offset = 0;
-  for (Function *fn = prog; fn; fn = fn->next) {
+  for (Obj *fn = prog; fn; fn = fn->next) {
+    if (!fn->is_function) continue;
+
     int offset = 0;
     for (Obj *var = fn->locals; var; var = var->next) {
       offset += var->ty->size;
@@ -201,11 +203,14 @@ static void assign_lvar_offsets(Function *prog) {
   }
 }
 
-void codegen(Function *prog) {
+void codegen(Obj *prog) {
   assign_lvar_offsets(prog);
 
-  for (Function *fn = prog; fn; fn = fn->next) {
+  for (Obj *fn = prog; fn; fn = fn->next) {
+    if (!fn->is_function) continue;
+
     printf("  .globl %s\n", fn->name);
+    printf("  .text\n");
     printf("%s:\n", fn->name);
     current_fn = fn;
 

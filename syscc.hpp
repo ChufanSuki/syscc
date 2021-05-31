@@ -46,22 +46,22 @@ Token *tokenize_file(char *filename);
 // parse.c
 //
 
-// Local variable
+// Variable or function
 typedef struct Obj Obj;
 struct Obj {
   Obj *next;
-  char *name;  // Variable name
-  Type *ty;    // Type
+  char *name;     // Variable name
+  Type *ty;       // Type
+  bool is_local;  // local or global/function
+
+  // Local variable
   int offset;  // Offset from RBP
-};
 
-// Function
-typedef struct Function Function;
-struct Function {
-  Function *next;
-  char *name;
+  // Global variable or function
+  bool is_function;
+  
+  // Function
   Obj *params;
-
   Node *body;
   Obj *locals;
   int stack_size;
@@ -123,8 +123,8 @@ struct Node {
   int _num_val;  // Used if kind == ND_NUM
 };
 
-Function *parse(Token *tok);
-void dotgen(Function *prog);
+Obj *parse(Token *tok);
+void dotgen(Obj *prog);
 //
 // type.c
 //
@@ -179,4 +179,4 @@ void add_type(Node *node);
 // codegen.c
 //
 
-void codegen(Function *node);
+void codegen(Obj *node);
