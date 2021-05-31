@@ -26,4 +26,4 @@ mul         = unary ("*" unary | "/" unary)*
 unary       = ("+" | "-" | "*" | "&")? unary | postfix
 postfix     = primary ("[" expr "]")*
 funcall     = ident "(" (assign ("," assign)*)? ")"
-primary     = num | "(" expr ")" | ident func-args?
+primary     = num | "(" expr ")" | ident func-args? | "sizeof" unary
