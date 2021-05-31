@@ -11,8 +11,10 @@
 // function scope
 Type init_ty = (Type){TY_INT, 8};
 Type *ty_int = &init_ty;
+Type init_bool_ty = (Type){TY_INT, 1};
+Type *ty_char = &init_bool_ty;
 
-bool is_integer(Type *ty) { return ty->kind == TY_INT; }
+bool is_integer(Type *ty) { return ty->kind == TY_INT || ty->kind == TY_CHAR; }
 
 Type *copy_type(Type *ty) {
   Type *ret = (Type *)calloc(1, sizeof(Type));

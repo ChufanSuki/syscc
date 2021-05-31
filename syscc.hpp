@@ -130,6 +130,7 @@ void dotgen(Obj *prog);
 //
 
 typedef enum {
+  TY_CHAR,
   TY_BOOL,
   TY_INT,
   TY_PTR,
@@ -166,6 +167,7 @@ struct Type {
 };
 
 extern Type *ty_int;
+extern Type *ty_char;
 extern Type *ty_bool;
 
 bool is_integer(Type *ty);
