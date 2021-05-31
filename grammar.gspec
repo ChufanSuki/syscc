@@ -10,7 +10,7 @@ program     = function-definition*
 function-definition = declspec declarator "{" compound-stmt
 declspec    = "int"
 declarator = "*"* ident type-suffix
-type-suffix = "(" func-params | ε | "[" num "]"
+type-suffix = "(" func-params | ε | "[" num "]" type-suffix
 func-params = (param ("," param)*)? ")"
 param       = declspec declarator
 declaration = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"

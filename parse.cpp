@@ -129,14 +129,15 @@ static Type *func_params(Token **rest, Token *tok, Type *ty) {
 }
 
 // type-suffix = "(" func-params
-//             | "[" num "]"
+//             | "[" num "]" type-suffix
 //             | ε
 static Type *type_suffix(Token **rest, Token *tok, Type *ty) {
   if (equal(tok, "(")) return func_params(rest, tok->next, ty);
 
   if (equal(tok, "[")) {
     int sz = get_number(tok->next);
-    *rest = skip(tok->next->next, "]");
+    tok = skip(tok->next->next, "]");
+    ty = type_suffix(rest, tok, ty);
     return array_of(ty, sz);
   }
 
@@ -349,6 +350,7 @@ static Node *new_add(Node *lhs, Node *rhs, Token *tok) {
   // num + num
   if (is_integer(lhs->ty) && is_integer(rhs->ty)) return new_binary(ND_ADD, lhs, rhs, tok);
 
+  // error: ptr + ptr
   if (lhs->ty->base && rhs->ty->base) error_tok(tok, "invalid operands");
 
   // Canonicalize `num + ptr` to `ptr + num`.
