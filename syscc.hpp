@@ -59,7 +59,7 @@ struct Obj {
 
   // Global variable or function
   bool is_function;
-  
+
   // Function
   Obj *params;
   Node *body;

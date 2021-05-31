@@ -6,7 +6,7 @@ Ascending order of priority:
 unary+ unary-
 ( )
 
-program     = function-definition*
+program     = (function-definition | global-variable)*
 function-definition = declspec declarator "{" compound-stmt
 declspec    = "int"
 declarator = "*"* ident type-suffix
