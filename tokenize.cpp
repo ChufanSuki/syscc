@@ -43,18 +43,17 @@ static void verror_at(char *loc, char *fmt, va_list ap) {
     if (*p == '\n') line_no++;
 
   // Get a coloumn number.
-  int coloumn_no = 1;
-  for (char *p = line; p < loc; p++) 
-    coloumn_no++;
+  int column_no = 1;
+  for (char *p = line; p < loc; p++) column_no++;
 
   // Print out the line.
-  int indent = fprintf(stderr, "%s:%d.%d: ", current_filename, line_no, coloumn_no);
+  int indent = fprintf(stderr, "%s:%d.%d: ", current_filename, line_no, column_no);
   fprintf(stderr, "\033[0;31merror: \033[0m");
   fprintf(stderr, "%.*s\n", (int)(end - line), line);
 
   // Show the error message.
   int pos = loc - line + indent;
-  fprintf(stderr, "%*s", pos+7, "");  // print pos spaces.
+  fprintf(stderr, "%*s", pos + 7, "");  // print pos spaces.
   fprintf(stderr, "^ ");
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
