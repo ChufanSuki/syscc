@@ -5,7 +5,7 @@ int main(int argc, char **argv) {
 
   // Tokenize and parse.
   Token *tok = tokenize_file(argv[1]);
-  Function *prog = parse(tok);
+  Obj *prog = parse(tok);
   // Print the AST
   // dotgen(prog);
   // Traverse the AST to emit assembly.
