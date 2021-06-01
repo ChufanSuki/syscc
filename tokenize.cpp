@@ -124,7 +124,20 @@ static bool is_keyword(Token *tok) {
   return false;
 }
 
-static int read_escaped_char(char *p) {
+static int read_escaped_char(char **new_pos, char *p) {
+  if ('0' <= *p && *p <= '7') {
+    // Read an octal number.
+    int c = *p++ - '0';
+    if ('0' <= *p && *p <= '7') {
+      c = (c << 3) + (*p++ - '0');
+      if ('0' <= *p && *p <= '7') c = (c << 3) + (*p++ - '0');
+    }
+    *new_pos = p;
+    return c;
+  }
+
+  *new_pos = p + 1;
+
   // Escape sequences are defined using themselves here. E.g.
   // '\n' is implemented using '\n'. This tautological definition
   // works because the compiler that compiles our compiler knows
@@ -137,16 +150,25 @@ static int read_escaped_char(char *p) {
   // For more info, read "Reflections on Trusting Trust" by Ken Thompson.
   // https://github.com/rui314/chibicc/wiki/thompson1984.pdf
   switch (*p) {
-  case 'a': return '\a';
-  case 'b': return '\b';
-  case 't': return '\t';
-  case 'n': return '\n';
-  case 'v': return '\v';
-  case 'f': return '\f';
-  case 'r': return '\r';
-  // [GNU] \e for the ASCII escape character is a GNU C extension.
-  case 'e': return 27;
-  default: return *p;
+    case 'a':
+      return '\a';
+    case 'b':
+      return '\b';
+    case 't':
+      return '\t';
+    case 'n':
+      return '\n';
+    case 'v':
+      return '\v';
+    case 'f':
+      return '\f';
+    case 'r':
+      return '\r';
+    // [GNU] \e for the ASCII escape character is a GNU C extension.
+    case 'e':
+      return 27;
+    default:
+      return *p;
   }
 }
 
@@ -154,23 +176,20 @@ static int read_escaped_char(char *p) {
 static char *string_literal_end(char *p) {
   char *start = p;
   for (; *p != '"'; p++) {
-    if (*p == '\n' || *p == '\0')
-      error_at(start, "unclosed string literal");
-    if (*p == '\\')
-      p++;
+    if (*p == '\n' || *p == '\0') error_at(start, "unclosed string literal");
+    if (*p == '\\') p++;
   }
   return p;
 }
 
 static Token *read_string_literal(char *start) {
   char *end = string_literal_end(start + 1);
-  char *buf = (char*)calloc(1, end - start);
+  char *buf = (char *)calloc(1, end - start);
   int len = 0;
 
   for (char *p = start + 1; p < end;) {
     if (*p == '\\') {
-      buf[len++] = read_escaped_char(p + 1);
-      p += 2;
+      buf[len++] = read_escaped_char(&p, p + 1);
     } else {
       buf[len++] = *p++;
     }
